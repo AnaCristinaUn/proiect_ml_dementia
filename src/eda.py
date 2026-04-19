@@ -4,7 +4,7 @@ from collections import Counter
 from preprocessing import preprocess_text
 
 #holds the dataset 
-data = pd.read_csv("data/dataset.csv")
+data = pd.read_csv("data/dailydialog_llm_labeled.csv")
 
 print("Number of samples:", len(data))
 

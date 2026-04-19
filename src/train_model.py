@@ -19,7 +19,7 @@ from preprocessing import clean_data_simple, preprocess_text
 # Define paths
 BASE_DIR = Path(__file__).resolve().parent.parent  # repository root
 #to get dataset path no matter where the script is run from
-DATA_PATH = BASE_DIR /"data"/"dailydialog_llm_labeled.csv"
+DATA_PATH = BASE_DIR /"data"/"dailydialog_dataset.csv"
 
 data = pd.read_csv(DATA_PATH)
 #data = pd.read_csv("data/dataset.csv")
@@ -61,12 +61,23 @@ models = {
 }
 
 # Train and evaluate each model
+results = []
+
 for name, model in models.items():
-
     model.fit(X_train, y_train)
-
     predictions = model.predict(X_test)
 
-    print("\nModel:", name)
+    report = classification_report(y_test, predictions, output_dict=True)
 
-    print(classification_report(y_test, predictions))
+    results.append({
+        "model": name,
+        "accuracy": report["accuracy"],
+        "f1": report["weighted avg"]["f1-score"]
+    })
+
+#  f1-score
+results = sorted(results, key=lambda x: x["f1"], reverse=True)
+
+print("\n Best Models:")
+for r in results:
+    print(r)

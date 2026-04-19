@@ -1,0 +1,1 @@
+The system analyzes daily activity descriptions and identifies important events to help dementia patients keep track of their day.

@@ -55,6 +55,8 @@ duration_phrases = [
 ]
 
 health_templates = [
+    "I had severe {symptom} and needed medical attention {time}",
+    "I forgot my {item} and my condition got worse {time}",
     "I set a reminder to take my {item} {time}",
     "I scheduled an appointment with the {professional} {time}",
     "I checked the expiry date on my {item} {time}",
@@ -77,6 +79,31 @@ health_templates = [
     "I updated {caregiver} about my {symptom} {time}",
     "I organized my {item} into the weekly pill box {time}",
     "I checked my calendar for the next {professional} visit {time}",
+    "I set up my {device} to remind me about the {task} {time}",
+    "I made sure to get some exercise as part of my {task} {time}",
+    "I followed the doctor's advice and took my {item} {time}",
+    "I felt {symptom} so I called the {professional} for advice {time}",
+    "I asked {caregiver} to help me with my {task} {time}",
+    "I used my {device} to call for help when I felt {symptom} {time}",
+    "I made a healthy meal as part of my diet plan {time}",
+    "I took a walk outside to get some fresh air {time}",
+    "I practiced my rehab exercises in the living room {time}",
+    "I checked my {device} to see how many steps I took today {time}",
+    "I made sure to get enough sleep last night {time}",
+    "I took my {item} with a glass of water {time}",
+    "I followed my therapy routine with the help of {caregiver} {time}",
+    "I felt {symptom} so I took a break and rested {time}",
+    "I used my {device} to listen to music while I rested {time}",
+    "I updated my health journal with my symptoms and how I felt {time}",
+    "I made a list of questions to ask the {professional} at my next appointment {time}",
+    "I took my {item} and then went for a walk {time}",
+    "I practiced my {task} with the {professional} and felt better afterward {time}",
+    "I set up my {device} to track my sleep and health data {time}",
+    "I asked {caregiver} to remind me about my {task} and they were very helpful {time}",
+    "I forgot to take my {item} and felt worse {time}",
+    "I experienced {symptom} and needed help {time}",
+    "I felt {symptom} so I took my {item} immediately {time}",
+    "I missed my {task} and started to feel {symptom} {time}",
 ]
 
 other_templates = [
@@ -122,12 +149,13 @@ other_templates = [
     "I felt like {hobby} would be a nice way to spend the {time}",
     "I helped {friend} with {chore} {duration}",
     "I practiced {hobby} {duration} {time}",
-    "I was {activity} and lost track of time {time}"
 ]
 
 # Word lists used to fill placeholders in the templates.
 health_items = [
-    "pills", "medicine", "supplements", "vitamins", "inhaler", "eye drops", "insulin", "blood sugar monitor", "ointment", "bandage", "denture cream", "hearing aid batteries", "CPAP mask", "walker", "cane", "wheelchair", "oxygen tank", "medical bracelet", "fitness tracker", "heart rate monitor"
+    "medicine", "medicine", "medicine", "medicine", "medication", "medication", "medication", "medication",
+    "therapy", "therapy", "drug", "drug",
+    "pills", "pills", "supplement", "supplement", "vitamin", "vitamin", "inhaler", "ointment", "cream", "bandage", "cast", "brace", "splint", "heating pad", "ice pack", "compression wrap", "antibiotic", "pain reliever", "allergy medication", "sleep aid", "cough syrup", "nasal spray", "eye drops", "ear drops", "topical gel"
 ]
 
 health_professionals = [
@@ -177,41 +205,62 @@ for sentence, label in seed_examples:
 max_attempts = target_count * 50
 attempts = 0
 
+# Keep the dataset balanced by generating (roughly) the same number of examples per class.
+target_per_class = target_count // 2
+count_0 = 0
+count_1 = 0
+
 while len(unique_examples) < target_count and attempts < max_attempts:
     attempts += 1
-    # Randomly choose a class label (0 or 1).
-    label = random.choice([0, 1])
+
+    # Choose the next label so we end up with roughly balanced classes.
+    if count_1 < target_per_class:
+        label = 1
+    elif count_0 < target_per_class:
+        label = 0
+    else:
+        # We've filled both classes to the desired size.
+        break
 
     if label == 1:
         # For health/self-care examples, fill a template with random words.
         template = random.choice(health_templates)
+        time = random.choice(time_phrases)
         sentence = template.format(
             item=random.choice(health_items),
             professional=random.choice(health_professionals),
             place=random.choice(health_places),
             device=random.choice(health_devices),
             task=random.choice(health_tasks),
-            time=random.choice(time_phrases),
-            caregiver=random.choice(caregivers),  
-            symptom=random.choice(symptoms),      
+            time=time,
+            caregiver=random.choice(caregivers),
+            symptom=random.choice(symptoms),
         )
     else:
-       template = random.choice(other_templates)
-       sentence = template.format(
-            time=random.choice(time_phrases),
+        template = random.choice(other_templates)
+        if random.random() < 0.5:
+            time = random.choice(time_phrases)
+        else:
+            time = ""
+        sentence = template.format(
+            time=time,
             duration=random.choice(duration_phrases),
             hobby=random.choice(hobbies),
-            item=random.choice(household_items), 
+            item=random.choice(household_items),
             friend=random.choice(friends),
             activity=random.choice(activities),
             electronic=random.choice(electronics),
-            chore=random.choice(chores)
+            chore=random.choice(chores),
         )
-       
+
     key = (sentence.strip().lower(), label)
     if key not in seen:
         seen.add(key)
         unique_examples.append((sentence, label))
+        if label == 1:
+            count_1 += 1
+        else:
+            count_0 += 1
 
 if len(unique_examples) < target_count:
     # Print a warning if we could not build enough unique rows.
